@@ -4,19 +4,20 @@ import matplotlib.pyplot as plt
 import os
 import pandas as pd
 import time
+from opti_functions import saving_DTTDM,deviation_DTTDM
 
 start=time.time()
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ###Model Setup
 
-well_id='HO' #'HO&VO','HO','VO','VT','BW'
-deep=False #this chooses the accumulation rate for 4He: deep=False means shallow 1.5e-11 ccSTP/g, deep=True means deep 4.75e-11ccSTP/g
+well_id='BW' #'HO&VO','HO','VO','VT','BW'
+deep=True #this chooses the accumulation rate for 4He: deep=False means shallow 1.5e-11 ccSTP/g, deep=True means deep 4.75e-11ccSTP/g
 
 if well_id=='HO&VO' or well_id=='HO' or well_id=='VO':
     #Bins HO&VO
     bin=[1,2,3,4,5,6] 
-    bin_namen=['<100 years','100-300 years','300-1000 years','1000-10000 yaers','10000-25000 years','>25000 years']
+    bin_namen=['<100 years','100-300 years','300-1000 years','1000-10000 years','10000-25000 years','>25000 years']
     
     #modeled tracer values for each bin
     #3H in TU, 14C age in years, NGT in °C,39Ar in pmAr, 4He shallow in ccSTG/g, 4He deep in ccSTg/g
@@ -60,7 +61,7 @@ elif well_id=='BW':
 #-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 ### Data Input
 
-well=77 #number in the list minus 2
+well=26 #number in the list (Netherlands data) minus 2
 
 #measured data and errors
 directory = os.path.dirname(os.path.abspath(__file__))
@@ -126,12 +127,19 @@ if well_id=='BW':
                             #chi square approach: chi^2=(model-measure)^2/(error)^2 and chi^2(sample)=chi^2(tracer1)+chi^2(tracer2)+...
                             chi_h=(h_model-h)**2/(err_h)**2
                             chi_NGT=(NGT_model-NGT)**2/(err_NGT)**2
+                            #chi_NGT=0
                             chi_age=(age_model-cage)**2/(err_cage)**2
+                            #chi_age=0
                             if deep==True:
                                 chi_he=(he2_model-he)**2/(err_he)**2
+                                #chi_he=0
+                                #z=1+1
                             else:
                                 chi_he=(he1_model-he)**2/(err_he)**2
+                                #chi_he=0
+                                #z=1+2
                             chi=chi_h+chi_NGT+chi_he+chi_age
+                            #chi=chi_h+chi_age
                             valid_combinations += 1
                             chi_r_values.append((chi, r.copy()))
 else:
@@ -161,7 +169,9 @@ else:
                                 chi_h=(h_model-h)**2/(err_h)**2
                                 chi_NGT=(NGT_model-NGT)**2/(err_NGT)**2
                                 chi_age=(age_model-cage)**2/(err_cage)**2
+                                #chi_age=0
                                 chi_ar=(ar_model-ar)**2/(err_ar)**2
+                                #chi_ar=0
                                 if deep==True:
                                     chi_he=(he2_model-he)**2/(err_he)**2
                                 else:
@@ -204,19 +214,22 @@ for i in range(50):
     chi_age=(age_model-cage) ** 2 / (err_cage) ** 2
     if deep == True:
         chi_he = (he2_model - he) ** 2 / (err_he) ** 2
+        #chi_he=0
     else:
         chi_he = (he1_model - he) ** 2 / (err_he) ** 2
+        #chi_he=0
 
-    print(f"Chi-square values for Combination {i + 1}:")
-    print("H:", chi_h)
-    print("NGT:", chi_NGT)
+    #print(f"Chi-square values for Combination {i + 1}:")
+    #print("H:", chi_h)
+    #print("NGT:", chi_NGT)
     
-    print("He:", chi_he)
-    print("C14 age:", chi_age)
+    #print("He:", chi_he)
+    #print("C14 age:", chi_age)
     if well_id=='HO&VO' or well_id=='HO' or well_id=='VO' or well_id=='VT':
         chi_ar = (ar_model - ar) ** 2 / (err_ar) ** 2
-        print("Ar:", chi_ar)
-    print("Total Chi-square:", chi)
+        #print('ar')
+        #print("Ar:", chi_ar)
+    #print("Total Chi-square:", chi)
 
 print("Number of valid combinations:", valid_combinations)
 #print(r_best)
@@ -235,3 +248,14 @@ print("Well ",(well_name))
 print("Mean of r arrays:", np.round(r_mean,4)*100)
 print("Standard deviation of r arrays:", np.round(r_std,4)*100)
 print('time DTTDM',(end-start))
+excel_file_path='C:/Users/InesChrista/Bachelorarbeit/Grumpy-master/LPM/results/DTTDM_results.xlsx' #Uni PC 
+deviation1,deviation2,deviation3,deviation4,deviation5,deviation6=deviation_DTTDM(well,r_mean)
+'''
+deviation1=0
+deviation2=0
+deviation3=0
+deviation4=0
+deviation5=0
+deviation6=0
+'''
+saving_DTTDM(well_name,r_mean,r_std,end,start,excel_file_path,deviation1,deviation2,deviation3,deviation4,deviation5,deviation6,deep)

@@ -48,7 +48,38 @@ def InputWerte(Tracer,Anzahl_Tracer,vogel,t_max,temp,salinity,pressure,excess,de
     return inputWerte
 #man könnte jetzt beliebig mehr Tracer hinzufügen -> eine Ortsfunktion gibt es noch nicht (weil oft Tracer je nach Ort unterschiedliche Input Funktionen haben)
     
-    
+#für variable Input Werte
+def InputWerte2(Tracer,Anzahl_Tracer,vogel,t_max,temp,salinity,pressure,excess,deep):
+    #Tracer1=True or False ....
+    inputWerte=np.zeros(([t_max,Anzahl_Tracer])) #länge wie t_max so ist die Länge von inputTracer auch definiert, variable Anzahl Tracer
+    #print(inputWerte)
+    k=0
+    if 'C14' in Tracer:
+        C14Werte=np.arange(t_max)
+        inputWerte[:,k]=C14Werte
+        k=k+1
+    if 'Ar39' in Tracer:
+        Ar39Werte=inputAr39(t_max)
+        inputWerte[:,k]=Ar39Werte
+        k=k+1
+    if 'CFC11' in Tracer:
+        zeit,CFC11Werte=inputCFC11(temp,salinity,pressure,excess,t_max)
+        inputWerte[:,k]=CFC11Werte
+        k=k+1
+    if 'CFC12' in Tracer:
+        zeit,CFC12Werte=inputCFC12(temp,salinity,pressure,excess,t_max)
+        inputWerte[:,k]=CFC12Werte
+        k=k+1
+    if '4He' in Tracer:
+        He4Werte=input4He(deep,t_max)
+        inputWerte[:,k]=He4Werte
+        k=k+1
+    if '3H' in Tracer:
+        H3Werte=input3H(t_max)
+        inputWerte[:,k]=H3Werte
+        k=k+1
+    return inputWerte
+#man könnte jetzt beliebig mehr Tracer hinzufügen -> eine Ortsfunktion gibt es noch nicht (weil oft Tracer je nach Ort unterschiedliche Input Funktionen haben)    
 
 
 

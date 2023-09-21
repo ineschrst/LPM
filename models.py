@@ -979,8 +979,12 @@ def BinWerte2 (inputWerte,t_grenzen, Tracer, Anzahl_Tracer): #sechs tracer ohne 
                 rho3H[i]=rho3H[i]+h
                 k=k+1
             n=n+1
+    if '3H' in Tracer: 
+        #rho3H=np.array([7,0.01,0,0,0,0]) #HO&VO in TU (instead of real input Function just the DTTDM values)
+        rho3H=np.array([7.0,0.0,0.0,0.0,0.0]) #BW
     if 'NGT' in Tracer:
-        rhoNGT=np.array([10,9.2,9.3,9.6,2.2,5]) #HO&VO
+        #rhoNGT=np.array([10,9.2,9.3,9.6,2.2,5]) #HO&VO
+        rhoNGT=np.array([10,9.3,9.8,2.2,5.0]) #BW
     return rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT
 
 def shapefree(a,b,c,d,e,f,rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT, Tracer,t_grenzen): #max 6 bins, min 2
@@ -1027,6 +1031,65 @@ def shapefree(a,b,c,d,e,f,rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT, Tracer
  
     return c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H,c_calcNGT  
 
+def shapefree2(a,b,c,d,e,f,rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT, Tracer,t_grenzen): #using numpy instead of PyMC math
+    c_calcC14=0
+    c_calcAr=0
+    c_calcC11=0
+    c_calcC12=0
+    c_calc4He=0
+    c_calc3H=0
+    c_calcNGT=0
+    anzahl_bins = len(t_grenzen) - 1
+    aa=[]
+    if anzahl_bins==2:
+        aa.append(a)
+        aa.append(b)
+    if anzahl_bins==3:
+        aa.append(a)
+        aa.append(b)
+        aa.append(c)
+    if anzahl_bins==4:
+        aa.append(a)
+        aa.append(b)
+        aa.append(c)
+        aa.append(d)
+    if anzahl_bins==5:
+        aa.append(a)
+        aa.append(b)
+        aa.append(c)
+        aa.append(d)
+        aa.append(e)
+    if anzahl_bins==6:
+        aa.append(a)
+        aa.append(b)
+        aa.append(c)
+        aa.append(d)
+        aa.append(e)
+        aa.append(f)
+    k=0
+    if 'C14' in Tracer:
+        c_calcC14=np.dot(rhoC14,aa)
+        k=k+1
+    if 'Ar39' in Tracer:
+        c_calcAr=np.dot(rhoAr,aa)
+        k=k+1
+    if 'CFC11' in Tracer:
+        c_calcC11=np.dot(rhoC11,aa)
+        k=k+1
+    if 'CFC12' in Tracer:
+        c_calcC12=np.dot(rhoC12,aa)
+        k=k+1
+    if '4He' in Tracer:
+        c_calc4He=np.dot(rho4He,aa)
+        k=k+1
+    if '3H' in Tracer:
+        c_calc3H=np.dot(rho3H,aa)
+        k=k+1
+    if 'NGT' in Tracer:
+        c_calcNGT=np.dot(rhoNGT,aa)
+        k=k+1
+ 
+    return c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H,c_calcNGT
 
 #inverse Gaussian Mix für 5 Tracer mit zeitschritten
 def IGMix(a,b,c, inputWerte, t_max1, t_max2,timestep1,timestep2,Tracer): #DMix
@@ -1091,6 +1154,129 @@ def IGMix(a,b,c, inputWerte, t_max1, t_max2,timestep1,timestep2,Tracer): #DMix
 
     return c_calcC14, c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H
 
+def IGMix_2(a,b,c, inputWerte, t_max1, t_max2,timestep1,timestep2,Tracer): #DMix
+    tau1=a
+    tau2=b
+    ratio=c
+    peclet = 10
+    c_calcC14=0
+    c_calcAr=0
+    c_calcC11=0
+    c_calcC12=0
+    c_calc4He=0
+    c_calc3H=0
+
+    #zeitIG = np.arange(t_max)
+    zeit1=np.arange(t_max1,step=timestep1)
+    zeit2=np.arange(start=t_max1,stop=t_max2,step=timestep2) ####
+    zeitIG=np.concatenate((zeit1,zeit2))
+    zeitIG[0]=zeitIG[1]
+    
+    wertIG1 = np.zeros(len(zeitIG))
+    wertIG2 = np.zeros(len(zeitIG))
+    
+    q1 = np.sqrt(peclet * tau1/(4 * np.pi))
+    q2 = np.sqrt(peclet * tau2/(4 * np.pi))
+  
+    wertIG1 = q1 * zeitIG ** (-3 / 2) * np.exp((-peclet * (zeitIG - tau1) ** 2) /
+                                                                 (4 * tau1 * zeitIG))
+    wertIG2 = q2 * zeitIG ** (-3 / 2) * np.exp((-peclet * (zeitIG - tau2) ** 2) /
+                                                                 (4 * tau2 * zeitIG))
+    k=0
+    if 'C14' in Tracer:
+        c_calc1C14=np.dot(inputWerte[:,k],wertIG1)
+        c_calc2C14=np.dot(inputWerte[:,k],wertIG2)
+        c_calcC14=ratio * c_calc1C14 + (1 - ratio) * c_calc2C14
+        k=k+1
+    if 'Ar39' in Tracer:
+        c_calc1Ar=np.dot(inputWerte[:,k],wertIG1)
+        c_calc2Ar=np.dot(inputWerte[:,k],wertIG2)
+        c_calcAr=ratio * c_calc1Ar + (1 - ratio) * c_calc2Ar
+        k=k+1
+    if 'CFC11' in Tracer:
+        c_calc1C11=np.dot(inputWerte[:,k],wertIG1)
+        c_calc2C11=np.dot(inputWerte[:,k],wertIG2)
+        c_calcC11=ratio * c_calc1C11 + (1 - ratio) * c_calc2C11
+        k=k+1
+    if 'CFC12' in Tracer:
+        c_calc1C12=np.dot(inputWerte[:,k],wertIG1)
+        c_calc2C12=np.dot(inputWerte[:,k],wertIG2)
+        c_calcC12=ratio * c_calc1C12 + (1 - ratio) * c_calc2C12
+        k=k+1
+    if '4He' in Tracer:
+        c_calc14He=np.dot(inputWerte[:,k],wertIG1)
+        c_calc24He=np.dot(inputWerte[:,k],wertIG2)
+        c_calc4He=ratio * c_calc14He + (1 - ratio) * c_calc24He
+        k=k+1
+    if '3H' in Tracer:
+        c_calc13H=np.dot(inputWerte[:,k],wertIG1)
+        c_calc23H=np.dot(inputWerte[:,k],wertIG2)
+        c_calc3H=ratio * c_calc13H + (1 - ratio) * c_calc23H
+        k=k+1
+
+    return c_calcC14, c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H
+
+def IGMix2(norm_factor,a,b,c, inputWerte, t_max1, t_max2,timestep1,timestep2,Tracer): #DMix
+    tau1=a
+    tau2=b
+    ratio=c
+    peclet = 10
+    c_calcC14=0
+    c_calcAr=0
+    c_calcC11=0
+    c_calcC12=0
+    c_calc4He=0
+    c_calc3H=0
+
+    #zeitIG = np.arange(t_max)
+    zeit1=np.arange(t_max1,step=timestep1)
+    zeit2=np.arange(start=t_max1,stop=t_max2,step=timestep2) ####
+    zeitIG=np.concatenate((zeit1,zeit2))
+    zeitIG[0]=zeitIG[1]
+    
+    wertIG1 = np.zeros(len(zeitIG))
+    wertIG2 = np.zeros(len(zeitIG))
+    
+    q1 = np.sqrt(peclet * tau1/(4 * np.pi))
+    q2 = np.sqrt(peclet * tau2/(4 * np.pi))
+  
+    wertIG1 = norm_factor*q1 * zeitIG ** (-3 / 2) * np.exp((-peclet * (zeitIG - tau1) ** 2) /
+                                                                 (4 * tau1 * zeitIG))
+    wertIG2 = norm_factor* q2 * zeitIG ** (-3 / 2) * np.exp((-peclet * (zeitIG - tau2) ** 2) /
+                                                                 (4 * tau2 * zeitIG))
+    k=0
+    if 'C14' in Tracer:
+        c_calc1C14=pmm.dot(inputWerte[:,k],wertIG1)
+        c_calc2C14=pmm.dot(inputWerte[:,k],wertIG2)
+        c_calcC14=ratio * c_calc1C14 + (1 - ratio) * c_calc2C14
+        k=k+1
+    if 'Ar39' in Tracer:
+        c_calc1Ar=pmm.dot(inputWerte[:,k],wertIG1)
+        c_calc2Ar=pmm.dot(inputWerte[:,k],wertIG2)
+        c_calcAr=ratio * c_calc1Ar + (1 - ratio) * c_calc2Ar
+        k=k+1
+    if 'CFC11' in Tracer:
+        c_calc1C11=pmm.dot(inputWerte[:,k],wertIG1)
+        c_calc2C11=pmm.dot(inputWerte[:,k],wertIG2)
+        c_calcC11=ratio * c_calc1C11 + (1 - ratio) * c_calc2C11
+        k=k+1
+    if 'CFC12' in Tracer:
+        c_calc1C12=pmm.dot(inputWerte[:,k],wertIG1)
+        c_calc2C12=pmm.dot(inputWerte[:,k],wertIG2)
+        c_calcC12=ratio * c_calc1C12 + (1 - ratio) * c_calc2C12
+        k=k+1
+    if '4He' in Tracer:
+        c_calc14He=pmm.dot(inputWerte[:,k],wertIG1)
+        c_calc24He=pmm.dot(inputWerte[:,k],wertIG2)
+        c_calc4He=ratio * c_calc14He + (1 - ratio) * c_calc24He
+        k=k+1
+    if '3H' in Tracer:
+        c_calc13H=pmm.dot(inputWerte[:,k],wertIG1)
+        c_calc23H=pmm.dot(inputWerte[:,k],wertIG2)
+        c_calc3H=ratio * c_calc13H + (1 - ratio) * c_calc23H
+        k=k+1
+
+    return c_calcC14, c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H
 
 #pistonMix
 def PMix(a,b,c, inputWerte,t_max,Tracer): #4 Tracer nicht timesteps (Problem-> statt tau index von tau wissen)
@@ -1145,11 +1331,12 @@ def shapefreeTTD2(a,err_a,t_grenzen,well_name): #with errors
     t = []
     for i in range(len(t_grenzen) - 1):
         t.append(f"{t_grenzen[i]}-{t_grenzen[i+1]} yr")
+    plt.figure(figsize=(8.5,5))
     plt.bar(t,a,width=0.5,yerr=err_a,capsize=8)
     plt.xlabel("Age Bins")
     plt.ylabel("Ratio of each age bin") #how much water is how old
     plt.title("Contributions of the age bins to the water mixture of Well {}".format(well_name[0]))
-    plt.show()
+    #plt.show()
     return ()
 
 def shapefreeTTD3(a,t_grenzen):

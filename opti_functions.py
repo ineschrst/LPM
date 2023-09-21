@@ -2,10 +2,11 @@
 import pymc as pm
 import matplotlib.pyplot as plt 
 import arviz as az
+import arviz.labels as azl
 import numpy as np
 import os
 import pandas as pd
-from models import exp,shapefree,BinWerte2,IGMix,shapefreeTTD,exponentialMix,inverseGaussianMix,inverseGaussianMixvary,inverseGaussianMixvary1,inverseGaussianMixvary2,exponentialMixvary,exponentialMixvary1,exponentialMixvary2, exponentialMixTTD,inverseGaussianMixTTD
+from models import exp,shapefree,BinWerte2,IGMix,shapefreeTTD,exponentialMix,inverseGaussianMix,inverseGaussianMixvary,inverseGaussianMixvary1,inverseGaussianMixvary2,exponentialMixvary,exponentialMixvary1,exponentialMixvary2, exponentialMixTTD,inverseGaussianMixTTD,shapefree2,IGMix_2
 from input_functions import InputWerte
 
 directory = os.path.dirname(os.path.abspath(__file__))
@@ -236,30 +237,42 @@ def convergence(trace, summary,iterations):
     plt.show()
     
     #r_hat should be 1.05 or smaller
-    r_hat=summary['age1'].sel(metric='r_hat').item()
+    r_hat1=summary['age1'].sel(metric='r_hat').item()
     r_hat2=summary['age2'].sel(metric='r_hat').item()
     r_hat3=summary['ratio'].sel(metric='r_hat').item()
-    if r_hat>1.05 or r_hat2>1.05 or r_hat3>1.05:
-        print("There might be problem with the convergence in age1 r_hat=",r_hat, 'or age2 r_hat=',r_hat2,'or ratio r_hat=',r_hat3)
+    if r_hat1>1.05 or r_hat2>1.05 or r_hat3>1.05:
+        print("There might be problem with the convergence in age1 r_hat=",r_hat1, 'or age2 r_hat=',r_hat2,'or ratio r_hat=',r_hat3)
+        r_hat=False
+    else:
+        r_hat=True
 
     #MCSE/posterior sd < 10%
-    msce=summary['age1'].sel(metric='mcse_mean').item()
-    sd=summary['age1'].sel(metric='sd').item()
+    msce1=summary['age1'].sel(metric='mcse_mean').item()
+    sd1=summary['age1'].sel(metric='sd').item()
     msce2=summary['age2'].sel(metric='mcse_mean').item()
     sd2=summary['age2'].sel(metric='sd').item()
     msce3=summary['ratio'].sel(metric='mcse_mean').item()
     sd3=summary['ratio'].sel(metric='sd').item()
-    if msce/sd > 0.1 or msce2/sd2 > 0.1 or msce3/sd3 > 0.1:
-        print('There might be problem with the convergence in age1 msce/sd=',msce/sd, 'or age2 msce/sd=',msce2/sd2,'or ratio msce/sd=',msce3/sd3)
+    if msce1/sd1 > 0.1 or msce2/sd2 > 0.1 or msce3/sd3 > 0.1:
+        print('There might be problem with the convergence in age1 msce/sd=',msce1/sd1, 'or age2 msce/sd=',msce2/sd2,'or ratio msce/sd=',msce3/sd3)
+        mcse=False
+    else:
+        mcse=True
+        
 
     #ESS/iteration > 10%
-    ess=summary['age1'].sel(metric='ess_bulk').item()
+    ess1=summary['age1'].sel(metric='ess_bulk').item()
     ess2=summary['age2'].sel(metric='ess_bulk').item()
     ess3=summary['ratio'].sel(metric='ess_bulk').item()
-    if ess/iterations < 0.1 or ess2/iterations < 0.1 or ess3/iterations < 0.1:
-        print('There might be problem with the convergence in age1 ess/iterations=',ess/iterations, 'or age2 ess/iterations=',ess2/iterations,'or ratio ess/iterations=',ess3/iterations)
+    if ess1/iterations < 0.1 or ess2/iterations < 0.1 or ess3/iterations < 0.1:
+        print('There might be problem with the convergence in age1 ess/iterations=',ess1/iterations, 'or age2 ess/iterations=',ess2/iterations,'or ratio ess/iterations=',ess3/iterations)
+        ess=False
+    else:
+        ess=True
+
 
     print('----------------------------------------------------------------------------------------')
+    return r_hat,mcse,ess
 
 def convergence_extended_shapefree(trace,summary,iterations):
     print('----------------------------------------------------------------------------------------')
@@ -345,7 +358,8 @@ def convergence_shapefree6(trace,summary,iterations): #for six ratios
     r_hat3=summary['ratio3'].sel(metric='r_hat').item()
     r_hat4=summary['ratio4'].sel(metric='r_hat').item()
     r_hat5=summary['ratio5'].sel(metric='r_hat').item()
-    r_hat6=summary['ratio6'].sel(metric='r_hat').item()
+    #r_hat6=summary['ratio6'].sel(metric='r_hat').item() 
+    r_hat6=1.0 #BW
     if r_hat1>1.05 or r_hat2>1.05 or r_hat3>1.05 or r_hat4>1.05 or r_hat5>1.05 or r_hat6>1.05:
         print("There might be problem with the convergence in r_hat")
         r_hat=False
@@ -361,8 +375,10 @@ def convergence_shapefree6(trace,summary,iterations): #for six ratios
     sd4=summary['ratio4'].sel(metric='sd').item()
     msce5=summary['ratio5'].sel(metric='mcse_mean').item()
     sd5=summary['ratio5'].sel(metric='sd').item()
-    msce6=summary['ratio6'].sel(metric='mcse_mean').item()
-    sd6=summary['ratio6'].sel(metric='sd').item()
+    #msce6=summary['ratio6'].sel(metric='mcse_mean').item()
+    #sd6=summary['ratio6'].sel(metric='sd').item()
+    msce6=1 #BW
+    sd6=100 #BW
     if msce1/sd1 > 0.1 or msce2/sd2 > 0.1 or msce3/sd3 > 0.1 or msce4/sd4 > 0.1 or msce5/sd5 > 0.1 or msce6/sd6 > 0.1:
         print('There might be problem with the convergence msce/sd')
         ms=False
@@ -373,7 +389,8 @@ def convergence_shapefree6(trace,summary,iterations): #for six ratios
     ess3=summary['ratio3'].sel(metric='ess_bulk').item()
     ess4=summary['ratio4'].sel(metric='ess_bulk').item()
     ess5=summary['ratio5'].sel(metric='ess_bulk').item()
-    ess6=summary['ratio6'].sel(metric='ess_bulk').item()
+    #ess6=summary['ratio6'].sel(metric='ess_bulk').item()
+    ess6=iterations #BW
     if ess1/iterations < 0.1 or ess2/iterations < 0.1 or ess3/iterations < 0.1 or ess4/iterations < 0.1 or ess5/iterations < 0.1 or ess6/iterations < 0.1:
         print('There might be problem with the convergence ess/iterations')
         ess=False
@@ -519,12 +536,73 @@ def deviation_ratios(summary,well):
         name=0
         time=0
         ratio=0   
-    sigmaratio1=np.round((abs((summary['ratio1'].sel(metric='mean').item()-ratio[0][0])/summary['ratio1'].sel(metric='sd').item())),3)
-    sigmaratio2=np.round((abs((summary['ratio2'].sel(metric='mean').item()-ratio[0][1])/summary['ratio2'].sel(metric='sd').item())),3)
-    sigmaratio3=np.round((abs((summary['ratio3'].sel(metric='mean').item()-ratio[0][2])/summary['ratio3'].sel(metric='sd').item())),3)
-    sigmaratio4=np.round((abs((summary['ratio4'].sel(metric='mean').item()-ratio[0][3])/summary['ratio4'].sel(metric='sd').item())),3)
-    sigmaratio5=np.round((abs((summary['ratio5'].sel(metric='mean').item()-ratio[0][4])/summary['ratio5'].sel(metric='sd').item())),3)
-    sigmaratio6=np.round((abs((summary['ratio6'].sel(metric='mean').item()-ratio[0][5])/summary['ratio6'].sel(metric='sd').item())),3)
+    sigmaratio1=np.round((abs((summary['ratio1'].sel(metric='mean').item()-ratio[0][0])/summary['ratio1'].sel(metric='sd').item())),5)
+    sigmaratio2=np.round((abs((summary['ratio2'].sel(metric='mean').item()-ratio[0][1])/summary['ratio2'].sel(metric='sd').item())),5)
+    sigmaratio3=np.round((abs((summary['ratio3'].sel(metric='mean').item()-ratio[0][2])/summary['ratio3'].sel(metric='sd').item())),5)
+    sigmaratio4=np.round((abs((summary['ratio4'].sel(metric='mean').item()-ratio[0][3])/summary['ratio4'].sel(metric='sd').item())),5)
+    sigmaratio5=np.round((abs((summary['ratio5'].sel(metric='mean').item()-ratio[0][4])/summary['ratio5'].sel(metric='sd').item())),5)
+    sigmaratio6=np.round((abs((summary['ratio6'].sel(metric='mean').item()-ratio[0][5])/summary['ratio6'].sel(metric='sd').item())),5)
+
+    print("Well",name)
+    print("Sigma deviation ratio1 =",sigmaratio1,", ratio2 =",sigmaratio2,", ratio3 =",sigmaratio3,", ratio4 =",sigmaratio4,", ratio5 =",sigmaratio5,", ratio6 =",sigmaratio6)
+    print("Time Bins",time)
+    return sigmaratio1,sigmaratio2,sigmaratio3,sigmaratio4,sigmaratio5,sigmaratio6
+
+def deviation_ratios2(MAP,summary,well):
+    if well<19:
+        #BW Werte
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='B:F',skiprows=well,nrows=1).values
+        time=['<100 yr','100-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>21 and well<26:
+        #BW Werte
+        well=well-3
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='B:F',skiprows=well,nrows=1).values
+        time=['<100 yr','100-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>26 and well<41:
+        #BW Werte
+        well=well-4
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='B:F',skiprows=well,nrows=1).values
+        time=['<100 yr','100-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>40 and well<60:
+        #VT Werte
+        well=well-41
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='VT',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='VT',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<70 yr','70-250 yr','250-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>59 and well<63:
+        #VO Werte
+        well=well-60+4
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<100 yr','100-300 yr','300-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>63 and well<66:
+        #VO Werte
+        well=well-60+3
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<100 yr','100-300 yr','300-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>76 and well<81:
+        #HO Werte
+        well=well-77
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<100 yr','100-300 yr','300-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif 18<well<22 or well==26 or well==63 or 65<well<77:
+        #missing values
+        print("This well doesn't exist in the DTTDM age results data")
+        name=0
+        time=0
+        ratio=0   
+    sigmaratio1=np.round((abs((MAP['ratio1']-ratio[0][0])/summary['ratio1'].sel(metric='sd').item())),5)
+    sigmaratio2=np.round((abs((MAP['ratio2']-ratio[0][1])/summary['ratio2'].sel(metric='sd').item())),5)
+    sigmaratio3=np.round((abs((MAP['ratio3']-ratio[0][2])/summary['ratio3'].sel(metric='sd').item())),5)
+    sigmaratio4=np.round((abs((MAP['ratio4']-ratio[0][3])/summary['ratio4'].sel(metric='sd').item())),5)
+    sigmaratio5=np.round((abs((MAP['ratio5']-ratio[0][4])/summary['ratio5'].sel(metric='sd').item())),5)
+    #sigmaratio6=np.round((abs((MAP['ratio6']-ratio[0][5])/summary['ratio6'].sel(metric='sd').item())),5)
+    sigmaratio6=0 #BW
 
     print("Well",name)
     print("Sigma deviation ratio1 =",sigmaratio1,", ratio2 =",sigmaratio2,", ratio3 =",sigmaratio3,", ratio4 =",sigmaratio4,", ratio5 =",sigmaratio5,", ratio6 =",sigmaratio6)
@@ -535,14 +613,22 @@ def relative_error(ratios,err_ratios):
     relative=err_ratios/ratios
     return relative
 
-def saving_shape(trace,well_name,excel_file_path,ratios,err_ratios,end,start,r_hat,mcse,ess,sigmaratio,relative): #to save the results of PyMC shapefree
+def saving_shape(trace,well_name,excel_file_path,ratios,err_ratios,end,start,r_hat,mcse,ess,sigmaratio,relative,deep,MAP,obsAr,obsNGT,obsC14,obs3H,obs4He,sd_obsAr,sd_obsNGT,sd_obsC14,sd_obs3H,sd_obs4He): #to save the results of PyMC shapefree
     #saves the trace plot
     az.plot_trace(trace)
-    figname = "traceplot_compare3_well_{}.pdf".format(well_name[0])
+    figname = "traceplot_well_{}_20_09.pdf".format(well_name[0])
     savefolder='C:/Users/InesChrista/Bachelorarbeit/Grumpy-master/LPM/results/trace_plots' #uni pc
     #savefolder='C:/InesZeug/Bachelorarbeit/Grumpy-master/py/results' #zuhause pc
     path=os.path.join(savefolder,figname)
     plt.savefig(path, format='pdf')
+
+    labeller = azl.MapLabeller(var_name_map={"obsAr / obsAr":r"$^{39}$Ar", "obs4He / obs4He": r"$^4$He", "obs3H / obs3H":r"$^3$H","obsC14 / obsC14":r"$^{14}$C apparent age","obsNGT / obsNGT":"NGT"})
+    az.plot_ppc(trace,kind="scatter",num_pp_samples=30,labeller=labeller)
+    figname2 = "ppc_well_{}_20_09.pdf".format(well_name[0])
+    savefolder2='C:/Users/InesChrista/Bachelorarbeit/Grumpy-master/LPM/results/ppc' #uni pc
+    #savefolder='C:/InesZeug/Bachelorarbeit/Grumpy-master/py/results' #zuhause pc
+    path2=os.path.join(savefolder2,figname2)
+    plt.savefig(path2, format='pdf')
     
     #saves the values to an excel file
     df_results = pd.DataFrame({
@@ -552,13 +638,13 @@ def saving_shape(trace,well_name,excel_file_path,ratios,err_ratios,end,start,r_h
         'Ratio 3': ratios[2],
         'Ratio 4': ratios[3],
         'Ratio 5': ratios[4],
-        'Ratio 6': ratios[5],
+        #'Ratio 6': ratios[5],
         'SD Ratio 1': err_ratios[0],
         'SD Ratio 2': err_ratios[1],
         'SD Ratio 3': err_ratios[2],
         'SD Ratio 4': err_ratios[3],
         'SD Ratio 5': err_ratios[4],
-        'SD Ratio 6': err_ratios[5],
+        #'SD Ratio 6': err_ratios[5],
         'Time': end - start,
         'r_hat': r_hat,
         'mcse': mcse,
@@ -574,7 +660,25 @@ def saving_shape(trace,well_name,excel_file_path,ratios,err_ratios,end,start,r_h
         'relative3':relative[2],
         'relative4':relative[3],
         'relative5':relative[4],
-        'relative6':relative[5]
+        #'relative6':relative[5],
+        'deep': deep,
+        'MAP ratio 1': MAP['ratio1'],
+        'MAP ratio 2': MAP['ratio2'],
+        'MAP ratio 3': MAP['ratio3'],
+        'MAP ratio 4': MAP['ratio4'],
+        'MAP ratio 5': MAP['ratio5'],
+        #'MAP ratio 6': MAP['ratio6'],
+        'obsAr': obsAr,
+        'obsC14': obsC14,
+        'obsNGT':obsNGT,
+        'obs3H':obs3H,
+        'obs4He':obs4He,
+        'sd_obsAr': sd_obsAr,
+        'sd_obsC14': sd_obsC14,
+        'sd_obsNGT':sd_obsNGT,
+        'sd_obs3H':sd_obs3H,
+        'sd_obs4He':sd_obs4He
+
     })
 
     # Write the DataFrame to an Excel file
@@ -596,3 +700,276 @@ def plots_priors(ratio1,ratio2,ratio3,ratio4,ratio5,ratio6):
             plt.show()
     return 
 
+def saving_DTTDM(well_name,ratios,err_ratios,end,start,excel_file_path,deviation1,deviation2,deviation3,deviation4,deviation5,deviation6,deep):
+    df_results = pd.DataFrame({
+        'Well Name': well_name.flatten(),
+        'Ratio 1': ratios[0],
+        'Ratio 2': ratios[1],
+        'Ratio 3': ratios[2],
+        'Ratio 4': ratios[3],
+        'Ratio 5': ratios[4],
+        'Ratio 6': ratios[5],
+        'SD Ratio 1': err_ratios[0],
+        'SD Ratio 2': err_ratios[1],
+        'SD Ratio 3': err_ratios[2],
+        'SD Ratio 4': err_ratios[3],
+        'SD Ratio 5': err_ratios[4],
+        'SD Ratio 6': err_ratios[5],
+        'Time': end - start,
+        'deviation1': deviation1,
+        'deviation2': deviation2,
+        'deviation3': deviation3,
+        'deviation4': deviation4,
+        'deviation5': deviation5,
+        'deviation6': deviation6,
+        'deep': deep
+    })
+
+    # Write the DataFrame to an Excel file
+    with pd.ExcelWriter(excel_file_path, mode='a',if_sheet_exists='overlay') as writer:
+        df_results.to_excel(writer, index=False, header=False,startrow=writer.sheets["Sheet1"].max_row)
+    return 
+
+def deviation_DTTDM(well,ratios):
+    if well<19:
+        #BW Werte
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='B:F',skiprows=well,nrows=1).values
+        time=['<100 yr','100-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>21 and well<26:
+        #BW Werte
+        well=well-3
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='B:F',skiprows=well,nrows=1).values
+        time=['<100 yr','100-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>26 and well<41:
+        #BW Werte
+        well=well-4
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='BW',usecols='B:F',skiprows=well,nrows=1).values
+        time=['<100 yr','100-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>40 and well<60:
+        #VT Werte
+        well=well-41
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='VT',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='VT',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<70 yr','70-250 yr','250-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>59 and well<63:
+        #VO Werte
+        well=well-60+4
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<100 yr','100-300 yr','300-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>63 and well<66:
+        #VO Werte
+        well=well-60+3
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<100 yr','100-300 yr','300-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif well>76 and well<81:
+        #HO Werte
+        well=well-77
+        name=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='A',skiprows=well,nrows=1).values
+        ratio=pd.read_excel(DTTDM_results_Tano,sheet_name='HO & VO',usecols='B:G',skiprows=well,nrows=1).values
+        time=['<100 yr','100-300 yr','300-1000 yr','1000-10000 yr','10000-25000 yr','>25000 yr']
+    elif 18<well<22 or well==26 or well==63 or 65<well<77:
+        #missing values
+        print("This well doesn't exist in the DTTDM age results data")
+        name=0
+        time=0
+        ratio=0   
+    deviation1=(ratios[0]-ratio[0][0])
+    deviation2=(ratios[1]-ratio[0][1])
+    deviation3=(ratios[2]-ratio[0][2])
+    deviation4=(ratios[3]-ratio[0][3])
+    deviation5=(ratios[4]-ratio[0][4])
+    deviation6=(ratios[5]-ratio[0][5])
+    #deviation6=0
+    return deviation1,deviation2,deviation3,deviation4,deviation5,deviation6
+
+def chi_squared_1(rhoC14,rhoAr, rhoC11,rhoC12,rho4He,rho3H,rhoNGT, Tracer,t_grenzen, ratios,h,err_h,he,err_he,cage,err_cage,ar,err_ar,NGT,err_NGT):  #Measurment error as error
+    c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H,c_calcNGT=shapefree2(ratios[0],ratios[1],ratios[2],ratios[3],ratios[4],ratios[5],rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT,Tracer,t_grenzen)
+    
+    chi_h=(h-c_calc3H)**2/(err_h)**2
+    chi_NGT=(NGT-c_calcNGT)**2/(err_NGT)**2
+    chi_age=(cage-c_calcC14)**2/(err_cage)**2
+    chi_he=(he-c_calc4He)**2/(err_he)**2
+    chi_ar=(ar-c_calcAr)**2/(err_ar)**2
+    #print(chi_h,chi_NGT,chi_age,chi_he,chi_ar)
+    chi=chi_h+chi_NGT+chi_he+chi_age+chi_ar
+    #chi=chi_h+chi_NGT+chi_he+chi_ar
+    #chi=chi_h+chi_NGT+chi_he
+    #chi=chi_h+chi_NGT+chi_he+chi_age
+
+    #print(f"Chi-Squared Values well {well_name}:")
+    #print(f"chi_h: {chi_h}")
+    #print(f"chi_NGT: {chi_NGT}")
+    #print(f"chi_age: {chi_age}")
+    #print(f"chi_he: {chi_he}")
+    #print(f"chi_ar: {chi_ar}")
+    #print(f"Total chi-squared: {chi}")
+    return chi, chi_h,chi_NGT,chi_age,chi_he,chi_ar
+
+def chi_squared_2(rhoC14,rhoAr, rhoC11,rhoC12,rho4He,rho3H,rhoNGT, Tracer,t_grenzen, ratios,err_ratios,h,he,cage,ar,NGT):  #Model error as error
+    c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H,c_calcNGT=shapefree2(ratios[0],ratios[1],ratios[2],ratios[3],ratios[4],ratios[5],rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT,Tracer,t_grenzen)
+    ratios=ratios+err_ratios
+    c2_calcC14,c2_calcAr,c2_calcC11,c2_calcC12,c2_calc4He,c2_calc3H,c2_calcNGT=shapefree2(ratios[0],ratios[1],ratios[2],ratios[3],ratios[4],ratios[5],rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT,Tracer,t_grenzen)
+
+    err_ar=c2_calcAr-c_calcAr
+    err_h=c2_calc3H-c_calc3H
+    err_he=c2_calc4He-c_calc4He
+    err_cage=c2_calcC14-c_calcC14
+    err_NGT=c2_calcNGT-c_calcNGT
+
+    chi_h=(h-c_calc3H)**2/(err_h)**2
+    chi_NGT=(NGT-c_calcNGT)**2/(err_NGT)**2
+    chi_age=(cage-c_calcC14)**2/(err_cage)**2
+    chi_he=(he-c_calc4He)**2/(err_he)**2
+    chi_ar=(ar-c_calcAr)**2/(err_ar)**2
+
+    chi=chi_h+chi_NGT+chi_he+chi_age+chi_ar
+    #chi=chi_h+chi_NGT+chi_he+chi_ar
+    #chi=chi_h+chi_NGT+chi_he+chi_age
+
+    #print(f"Chi-Squared Values well {well_name}:")
+    #print(f"chi_h: {chi_h}")
+    #print(f"chi_NGT: {chi_NGT}")
+    #print(f"chi_age: {chi_age}")
+    #print(f"chi_he: {chi_he}")
+    #print(f"chi_ar: {chi_ar}")
+    #print(f"Total chi-squared: {chi}")
+    return chi, chi_h,chi_NGT,chi_age,chi_he,chi_ar
+
+def chi_squared_3(rhoC14,rhoAr, rhoC11,rhoC12,rho4He,rho3H,rhoNGT, Tracer,t_grenzen, ratios,err_ratios,h,he,cage,ar,NGT, sd_obsAr,sd_obsNGT,sd_obsC14,sd_obs3H,sd_obs4He):  #Model error as error
+    c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H,c_calcNGT=shapefree2(ratios[0],ratios[1],ratios[2],ratios[3],ratios[4],ratios[5],rhoC14,rhoAr,rhoC11,rhoC12,rho4He,rho3H,rhoNGT,Tracer,t_grenzen)
+
+    chi_h=(h-c_calc3H)**2/(sd_obs3H)**2
+    chi_NGT=(NGT-c_calcNGT)**2/(sd_obsNGT)**2
+    chi_age=(cage-c_calcC14)**2/(sd_obsC14)**2
+    chi_he=(he-c_calc4He)**2/(sd_obs4He)**2
+    chi_ar=(ar-c_calcAr)**2/(sd_obsAr)**2
+
+    chi=chi_h+chi_NGT+chi_he+chi_age+chi_ar
+    #chi=chi_h+chi_NGT+chi_he+chi_ar
+    #chi=chi_h+chi_NGT+chi_he
+    #chi=chi_h+chi_NGT+chi_he+chi_age
+
+    #print(f"Chi-Squared Values well {well_name}:")
+    #print(f"chi_h: {chi_h}")
+    #print(f"chi_NGT: {chi_NGT}")
+    #print(f"chi_age: {chi_age}")
+    #print(f"chi_he: {chi_he}")
+    #print(f"chi_ar: {chi_ar}")
+    #print(f"Total chi-squared: {chi}")
+    return chi, chi_h,chi_NGT,chi_age,chi_he,chi_ar
+
+def chi_squared_4(a,t_max,Tracer,Anzahl_Tracer,deep,h,err_h,he,err_he,cage,err_cage,ar,err_ar):  #Measurment error as error
+    t_max1=10
+    t_max2=t_max
+    timestep1=1
+    timestep2=1
+    peclet=10 
+    vogel=True 
+    temp = 24.0
+    salinity = 1.0
+    pressure = 0.955
+    excess = 2.
+    c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H=IGMix_2(a[0],a[1],a[2],InputWerte(Tracer, Anzahl_Tracer,vogel,t_max,temp,salinity,pressure,excess,deep),t_max1,t_max2,timestep1,timestep2,Tracer)
+
+    chi_h=(h-c_calc3H)**2/(err_h)**2
+    chi_age=(cage-c_calcC14)**2/(err_cage)**2
+    chi_he=(he-c_calc4He)**2/(err_he)**2
+    chi_ar=(ar-c_calcAr)**2/(err_ar)**2
+    chi=chi_h+chi_he+chi_age+chi_ar
+    #chi=chi_h+chi_he
+    #chi=chi_h+chi_he+chi_ar
+    #chi=chi_h+chi_NGT+chi_he+chi_ar
+
+    #print(f"Chi-Squared Values well {well_name}:")
+    #print(f"chi_h: {chi_h}")
+    #print(f"chi_NGT: {chi_NGT}")
+    #print(f"chi_age: {chi_age}")
+    #print(f"chi_he: {chi_he}")
+    #print(f"chi_ar: {chi_ar}")
+    #print(f"Total chi-squared: {chi}")
+    return chi, chi_h,chi_age,chi_he,chi_ar
+
+def chi_squared_5( a,t_max,deep,Tracer, Anzahl_Tracer,h,he,cage,ar,sd_obsAr,sd_obsC14,sd_obs3H,sd_obs4He):  #Model error as error
+    t_max1=10
+    t_max2=t_max
+    timestep1=1
+    timestep2=1
+    peclet=10 
+    vogel=True 
+    temp = 24.0
+    salinity = 1.0
+    pressure = 0.955
+    excess = 2.
+    c_calcC14,c_calcAr,c_calcC11,c_calcC12,c_calc4He,c_calc3H=IGMix_2(a[0],a[1],a[2],InputWerte(Tracer, Anzahl_Tracer,vogel,t_max,temp,salinity,pressure,excess,deep),t_max1,t_max2,timestep1,timestep2,Tracer)
+
+    chi_h=(h-c_calc3H)**2/(sd_obs3H)**2
+    chi_age=(cage-c_calcC14)**2/(sd_obsC14)**2
+    chi_he=(he-c_calc4He)**2/(sd_obs4He)**2
+    chi_ar=(ar-c_calcAr)**2/(sd_obsAr)**2
+
+    chi=chi_h+chi_he+chi_age+chi_ar
+    #chi=chi_h+chi_he
+    #chi=chi_h+chi_he+chi_ar
+    #chi=chi_h+chi_NGT+chi_he+chi_ar
+
+    #print(f"Chi-Squared Values well {well_name}:")
+    #print(f"chi_h: {chi_h}")
+    #print(f"chi_NGT: {chi_NGT}")
+    #print(f"chi_age: {chi_age}")
+    #print(f"chi_he: {chi_he}")
+    #print(f"chi_ar: {chi_ar}")
+    #print(f"Total chi-squared: {chi}")
+    return chi, chi_h,chi_age,chi_he,chi_ar
+
+def saving_analytic(trace,well_name,ages1,ages2,ratios,err_ages1,err_ages2,err_ratios,end,start,r_hat,ess,mcse,deep,MAP,excel_file_path,obsAr,obsC14,obs3H,obs4He,sd_obsAr,sd_obsC14,sd_obs3H,sd_obs4He):
+    #saves the trace plot
+    az.plot_trace(trace)
+    figname = "traceplot_well_{}_18_09_analytic.pdf".format(well_name[0])
+    savefolder='C:/Users/InesChrista/Bachelorarbeit/Grumpy-master/LPM/results/trace_plots' #uni pc
+    #savefolder='C:/InesZeug/Bachelorarbeit/Grumpy-master/py/results' #zuhause pc
+    path=os.path.join(savefolder,figname)
+    plt.savefig(path, format='pdf')
+
+    labeller = azl.MapLabeller(var_name_map={"obsAr / obsAr":r"$^{39}$Ar", "obs4He / obs4He": r"$^4$He", "obs3H / obs3H":r"$^3$H","obsC14 / obsC14":r"$^{14}$C apparent age","obsNGT / obsNGT":"NGT"})
+    az.plot_ppc(trace,kind="scatter",num_pp_samples=30, labeller=labeller)
+    figname2 = "ppc_well_{}_18_09_analytic.pdf".format(well_name[0])
+    savefolder2='C:/Users/InesChrista/Bachelorarbeit/Grumpy-master/LPM/results/ppc' #uni pc
+    #savefolder='C:/InesZeug/Bachelorarbeit/Grumpy-master/py/results' #zuhause pc
+    path2=os.path.join(savefolder2,figname2)
+    plt.savefig(path2, format='pdf')
+    
+    #saves the values to an excel file
+    df_results = pd.DataFrame({
+        'Well Name': well_name.flatten(),
+        'age1':ages1,
+        'age2':ages2,
+        'ratio':ratios,
+        'err_age1':err_ages1,
+        'err_age2':err_ages2,
+        'err_ratio':err_ratios,
+        'Time': end - start,
+        'r_hat': r_hat,
+        'mcse': mcse,
+        'ess':ess,
+        'deep': deep,
+        'MAP age 1': MAP['age1'],
+        'MAP age 2': MAP['age2'],
+        'MAP ratio': MAP['ratio'],
+        'obsAr': obsAr,
+        'obsC14': obsC14,
+        'obs3H':obs3H,
+        'obs4He':obs4He,
+        'sd_obsAr': sd_obsAr,
+        'sd_obsC14': sd_obsC14,
+        'sd_obs3H':sd_obs3H,
+        'sd_obs4He':sd_obs4He
+    })
+
+    # Write the DataFrame to an Excel file
+    with pd.ExcelWriter(excel_file_path, mode='a',if_sheet_exists='overlay') as writer:
+        df_results.to_excel(writer, index=False, header=False,startrow=writer.sheets["Sheet1"].max_row)
